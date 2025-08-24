@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CatchTwo Enhanced - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .pokemon-card {
+            background: linear-gradient(145deg, #f3f4f6, #e5e7eb);
+            border-left: 4px solid #3b82f6;
+        }
+        .shiny-card {
+            background: linear-gradient(145deg, #fef3c7, #fde68a);
+            border-left: 4px solid #f59e0b;
+        }
+        .legendary-card {
+            background: linear-gradient(145deg, #fce7f3, #fbcfe8);
+            border-left: 4px solid #ec4899;
+        }
+        .mythical-card {
+            background: linear-gradient(145deg, #ede9fe, #ddd6fe);
+            border-left: 4px solid #8b5cf6;
+        }
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <img src="https://camo.githubusercontent.com/1c34a30dc74c8cb780498c92aa4aeaa2e0bcec07a94b7a55d5377786adf43a5b/68747470733a2f2f6d656469612e646973636f72646170702e6e65742f6174746163686d656e74732f313033333333343538363936363535323636362f313035343839363838373834323438383432322f696d6167652e706e67" 
+                         alt="CatchTwo Logo" class="w-12 h-12 rounded-full">
+                    <div>
+                        <h1 class="text-3xl font-bold">CatchTwo Enhanced</h1>
+                        <p class="text-blue-100">Pokétwo Autocatcher Dashboard</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="refreshBtn" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                    <div class="text-right">
+                        <div class="text-sm text-blue-100">Last Updated</div>
+                        <div id="lastUpdated" class="text-lg font-semibold">--:--:--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="flex justify-center items-center py-20">
+            <div class="loading-spinner"></div>
+            <span class="ml-3 text-lg text-gray-600">Loading dashboard...</span>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboardContent" class="hidden">
+            <!-- Overall Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="pokemon-card p-6 rounded-xl shadow-lg card-hover transition-all">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600 uppercase tracking-wide">Total Pokemon</h3>
+                            <p id="totalPokemon" class="text-3xl font-bold text-gray-900">0</p>
+                        </div>
+                        <div class="bg-blue-500 p-3 rounded-full">
+                            <i class="fas fa-paw text-white text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <span class="text-sm text-gray-600">Catch Rate: </span>
+                        <span id="totalCatchRate" class="text-sm font-semibold text-blue-600">0/hr</span>
+                    </div>
+                </div>
+
+                <div class="shiny-card p-6 rounded-xl shadow-lg card-hover transition-all">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600 uppercase tracking-wide">Shiny Pokemon</h3>
+                            <p id="totalShinies" class="text-3xl font-bold text-gray-900">0</p>
+                        </div>
+                        <div class="bg-yellow-500 p-3 rounded-full">
+                            <i class="fas fa-star text-white text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <span class="text-sm text-gray-600">Shiny Rate: </span>
+                        <span id="shinyRate" class="text-sm font-semibold text-yellow-600">0/hr</span>
+                    </div>
+                </div>
+
+                <div class="legendary-card p-6 rounded-xl shadow-lg card-hover transition-all">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600 uppercase tracking-wide">Legendaries</h3>
+                            <p id="totalLegendaries" class="text-3xl font-bold text-gray-900">0</p>
+                        </div>
+                        <div class="bg-pink-500 p-3 rounded-full">
+                            <i class="fas fa-crown text-white text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <span class="text-sm text-gray-600">Legendary Rate: </span>
+                        <span id="legendaryRate" class="text-sm font-semibold text-pink-600">0/hr</span>
+                    </div>
+                </div>
+
+                <div class="mythical-card p-6 rounded-xl shadow-lg card-hover transition-all">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600 uppercase tracking-wide">Active Users</h3>
+                            <p id="activeUsers" class="text-3xl font-bold text-gray-900">0</p>
+                        </div>
+                        <div class="bg-purple-500 p-3 rounded-full">
+                            <i class="fas fa-users text-white text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <span class="text-sm text-gray-600">Total Users: </span>
+                        <span id="totalUsers" class="text-sm font-semibold text-purple-600">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Catch Rate Chart -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">
+                        <i class="fas fa-chart-line text-blue-500 mr-2"></i>
+                        Catch Rate Over Time
+                    </h3>
+                    <canvas id="catchRateChart" width="400" height="200"></canvas>
+                </div>
+
+                <!-- Pokemon Types Distribution -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">
+                        <i class="fas fa-chart-pie text-purple-500 mr-2"></i>
+                        Pokemon Distribution
+                    </h3>
+                    <canvas id="distributionChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- User Stats Table -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-table text-green-500 mr-2"></i>
+                        User Statistics
+                    </h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pokemon Caught</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shinies</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Legendaries</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Runtime</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Catch Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userStatsTable" class="bg-white divide-y divide-gray-200">
+                            <!-- User rows will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Catches -->
+            <div class="mt-8 bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-history text-orange-500 mr-2"></i>
+                        Recent Catches
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div id="recentCatches" class="space-y-4">
+                        <!-- Recent catches will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong class="font-bold">Error!</strong>
+            <span class="block sm:inline" id="errorText">Unable to load dashboard data.</span>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let catchRateChart, distributionChart;
+        let dashboardData = {};
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboard();
+            
+            // Refresh button
+            document.getElementById('refreshBtn').addEventListener('click', loadDashboard);
+            
+            // Auto-refresh every 30 seconds
+            setInterval(loadDashboard, 30000);
+        });
+
+        // Load dashboard data
+        async function loadDashboard() {
+            try {
+                showLoading(true);
+                hideError();
+                
+                const response = await fetch('/api/dashboard-stats');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                dashboardData = await response.json();
+                
+                updateOverallStats();
+                updateCharts();
+                updateUserTable();
+                updateRecentCatches();
+                updateLastUpdated();
+                
+                showLoading(false);
+                
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showError('Failed to load dashboard data: ' + error.message);
+                showLoading(false);
+            }
+        }
+
+        // Update overall statistics cards
+        function updateOverallStats() {
+            const stats = dashboardData.overall || {};
+            
+            document.getElementById('totalPokemon').textContent = (stats.total_catches || 0).toLocaleString();
+            document.getElementById('totalShinies').textContent = (stats.total_shinies || 0).toLocaleString();
+            document.getElementById('totalLegendaries').textContent = (stats.total_legendaries || 0).toLocaleString();
+            document.getElementById('activeUsers').textContent = stats.active_users || 0;
+            document.getElementById('totalUsers').textContent = stats.total_users || 0;
+            
+            // Calculate rates (assuming per hour)
+            const totalRuntime = stats.total_runtime || 1; // Avoid division by zero
+            document.getElementById('totalCatchRate').textContent = 
+                ((stats.total_catches || 0) / (totalRuntime / 3600)).toFixed(1) + '/hr';
+            document.getElementById('shinyRate').textContent = 
+                ((stats.total_shinies || 0) / (totalRuntime / 3600)).toFixed(2) + '/hr';
+            document.getElementById('legendaryRate').textContent = 
+                ((stats.total_legendaries || 0) / (totalRuntime / 3600)).toFixed(2) + '/hr';
+        }
+
+        // Update charts
+        function updateCharts() {
+            updateCatchRateChart();
+            updateDistributionChart();
+        }
+
+        // Update catch rate chart
+        function updateCatchRateChart() {
+            const ctx = document.getElementById('catchRateChart').getContext('2d');
+            
+            if (catchRateChart) {
+                catchRateChart.destroy();
+            }
+            
+            const hourlyData = dashboardData.hourly_stats || [];
+            
+            catchRateChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: hourlyData.map(d => new Date(d.hour).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})),
+                    datasets: [{
+                        label: 'Pokemon Caught',
+                        data: hourlyData.map(d => d.catches),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Shinies Caught',
+                        data: hourlyData.map(d => d.shinies),
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update distribution chart
+        function updateDistributionChart() {
+            const ctx = document.getElementById('distributionChart').getContext('2d');
+            
+            if (distributionChart) {
+                distributionChart.destroy();
+            }
+            
+            const distribution = dashboardData.distribution || {};
+            
+            distributionChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Regular', 'Legendary', 'Mythical', 'Ultra Beast', 'Shiny'],
+                    datasets: [{
+                        data: [
+                            distribution.regular || 0,
+                            distribution.legendary || 0,
+                            distribution.mythical || 0,
+                            distribution.ultrabeast || 0,
+                            distribution.shiny || 0
+                        ],
+                        backgroundColor: [
+                            '#6b7280',
+                            '#ec4899',
+                            '#8b5cf6',
+                            '#06b6d4',
+                            '#f59e0b'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update user statistics table
+        function updateUserTable() {
+            const tbody = document.getElementById('userStatsTable');
+            const users = dashboardData.users || [];
+            
+            tbody.innerHTML = '';
+            
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                
+                const runtime = user.runtime ? formatDuration(user.runtime) : 'N/A';
+                const catchRate = user.runtime ? ((user.pokemon_caught || 0) / (user.runtime / 3600)).toFixed(1) : '0';
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="text-sm font-medium text-gray-900">${user.username || 'Unknown'}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                            ${user.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${(user.pokemon_caught || 0).toLocaleString()}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${(user.shiny_caught || 0).toLocaleString()}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${(user.legendary_caught || 0).toLocaleString()}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${runtime}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${catchRate}/hr</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            if (users.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                        No active users found
+                    </td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+
+        // Update recent catches
+        function updateRecentCatches() {
+            const container = document.getElementById('recentCatches');
+            const catches = dashboardData.recent_catches || [];
+            
+            container.innerHTML = '';
+            
+            catches.forEach(catch_ => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-4 bg-gray-50 rounded-lg';
+                
+                const rarityColor = {
+                    'Legendary': 'text-pink-600',
+                    'Mythical': 'text-purple-600',
+                    'Ultra Beast': 'text-cyan-600',
+                    'Regular': 'text-gray-600'
+                }[catch_.rarity] || 'text-gray-600';
+                
+                const shinyIcon = catch_.is_shiny ? '<i class="fas fa-star text-yellow-500 mr-1"></i>' : '';
+                
+                div.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="text-2xl">${shinyIcon}🎮</div>
+                        <div>
+                            <div class="font-semibold ${rarityColor}">${catch_.pokemon_name}</div>
+                            <div class="text-sm text-gray-500">Level ${catch_.level} • ${catch_.iv_percentage}% IV</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-600">${catch_.username || 'Unknown'}</div>
+                        <div class="text-xs text-gray-400">${formatTimeAgo(catch_.caught_at)}</div>
+                    </div>
+                `;
+                
+                container.appendChild(div);
+            });
+            
+            if (catches.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-inbox text-4xl mb-4"></i>
+                        <p>No recent catches found</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Utility functions
+        function showLoading(show) {
+            document.getElementById('loadingIndicator').classList.toggle('hidden', !show);
+            document.getElementById('dashboardContent').classList.toggle('hidden', show);
+        }
+
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMessage').classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        function updateLastUpdated() {
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+        }
+
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            } else if (minutes > 0) {
+                return `${minutes}m`;
+            } else {
+                return `${seconds}s`;
+            }
+        }
+
+        function formatTimeAgo(timestamp) {
+            const now = new Date();
+            const then = new Date(timestamp);
+            const diffInSeconds = Math.floor((now - then) / 1000);
+            
+            if (diffInSeconds < 60) return 'Just now';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+            return `${Math.floor(diffInSeconds / 86400)}d ago`;
+        }
+    </script>
+</body>
+</html>
